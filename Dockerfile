@@ -93,13 +93,23 @@ RUN mkdir -p /out/protos && \
 RUN upx --lzma \
         /out/usr/bin/protoc-gen-*
 
-FROM alpine:3.8
-RUN apk add --no-cache libstdc++ protobuf-dev
+FROM google/dart
+RUN apt-get update && apt-get -y install \
+  make \
+  ruby-dev \
+  python-pip \
+  python-dev \
+  libz-dev \
+  protobuf-compiler \
+  python-protobuf
+
+RUN mkdir -p /home/runner
+ENV HOME=/home/runner
+ENV PATH="$PATH":"$HOME/.pub-cache/bin"
+RUN pub global activate protoc_plugin
+WORKDIR /go/src
 COPY --from=builder /out/usr /usr
 COPY --from=builder /out/protos /
-
-WORKDIR /go/src
-
 # protoc as an entry point for all plugins with import paths set
 ENTRYPOINT ["protoc", "-I.", \
     # required import paths for protoc-gen-grpc-gateway plugin
