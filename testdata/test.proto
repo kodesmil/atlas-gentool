@@ -1,6 +1,57 @@
 syntax = "proto3";
 
+package test;
+
+import "google/api/annotations.proto";
+import "github.com/lyft/protoc-gen-validate/validate/validate.proto";
+import "protoc-gen-swagger/options/annotations.proto";
+import "github.com/infobloxopen/protoc-gen-gorm/options/gorm.proto";
+import "github.com/infobloxopen/protoc-gen-atlas-query-validate/options/query_validate.proto";
+import "github.com/infobloxopen/protoc-gen-atlas-validate/options/atlas_validate.proto";
+import "github.com/infobloxopen/protoc-gen-preprocess/options/preprocess.proto";
 
 message Example {
-  string message = 1;
+  option (gorm.opts).ormable = true;
+  string email_address = 1 [(validate.rules).string.email = true, (preprocess.field).string = {methods:[lower]}];
+  string user_name = 2 [(atlas.query.validate) = {filtering: {allow: EQ}, sorting: {disable: true}}];
 }
+
+service ExampleService {
+    rpc Something (Example) returns (Example) {
+        option (atlas_validate.method).allow_unknown_fields = true;
+        option (google.api.http) = {
+            get: "/example"
+        };
+    }
+
+    rpc Create (Example) returns (Example) {
+        option (atlas_validate.method).allow_unknown_fields = false;
+        option (google.api.http) = {
+            post: "/example"
+        };
+    }
+
+    rpc Test (Example) returns (Example) {
+        option (google.api.http) = {
+            post: "/test"
+        };
+    }
+}
+
+option (atlas_validate.file).allow_unknown_fields = false;
+
+option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
+  info: {
+    title: "Example";
+    version: "1.0";
+    contact: {
+      name: "John Belamaric";
+      url: "https://github.com/infobloxopen/atlas-contacts-app";
+      email: "jbelamaric@infoblox.com";
+    };
+  };
+  schemes: HTTP;
+  schemes: HTTPS;
+  consumes: "application/json";
+  produces: "application/json";
+};
