@@ -105,8 +105,15 @@ RUN apt-get update && apt-get -y install \
 
 RUN mkdir -p /home/runner
 ENV HOME=/home/runner
-ENV PATH="$PATH":"$HOME/.pub-cache/bin"
+ENV PATH=$PATH:$HOME/.pub-cache/bin:$PATH
 RUN pub global activate protoc_plugin
+
+RUN mkdir $HOME/.npm-global
+ENV PATH=$HOME/.npm-global/bin:$PATH
+ENV NPM_CONFIG_PREFIX=$HOME/.npm-global
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - && apt-get install -y nodejs
+RUN npm install -g --unsafe-perm protoc-gen-grpc-web
+
 WORKDIR /go/src
 COPY --from=builder /out/usr /usr
 COPY --from=builder /out/protos /
